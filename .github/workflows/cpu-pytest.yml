@@ -2,6 +2,8 @@ name: Run CPU Pytests
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:

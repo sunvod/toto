@@ -2,6 +2,8 @@ name: MyPy Type Checking
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:

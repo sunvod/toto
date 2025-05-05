@@ -2,6 +2,8 @@ name: Black Code Formatting
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
