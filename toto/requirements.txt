@@ -16,8 +16,8 @@ rotary-embedding-torch==0.8.6
 s3fs==2024.2.0
 scikit-learn==1.5.0
 types-tabulate==0.9.0.20241207
+transformers==4.50.0
 tqdm==4.66.3
-transformers==4.48.0
 beartype==0.18.5
 mypy==1.11.1
 pyyaml==6.0.2
