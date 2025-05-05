@@ -1,4 +1,5 @@
 # Toto - Time Series Optimized Transformer for Observability
+[Paper](#) | [Toto Model Card](#) | [BOOM Dataset](#)
 
 Toto is a foundation model for multivariate time series forecasting with a focus on observability metrics. This model leverages innovative architectural designs to efficiently handle the high-dimensional, complex time series that are characteristic of observability data.
 
