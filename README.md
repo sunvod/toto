@@ -24,13 +24,13 @@ This repository also hosts the code for evaluating time series models on BOOM (*
 ### Features
 
 - **Zero-Shot Forecasting**: Perform forecasting without fine-tuning on your specific time series
-- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
+- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain ∂xuaromwebenchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
 [BOOM](https://huggingface.co/datasets/Datadog/BOOM).
 - **Multi-Variate Support**: Efficiently process multiple variables using Proportional Factorized Space-Time Attention
 - **Probabilistic Predictions**: Generate both point forecasts and uncertainty estimates using a Student-T mixture model
 - **High-Dimensional Support**: Handle time series with a large number of variables efficiently
 - **Decoder-Only Architecture**: Support for variable prediction horizons and context lengths
-- **Pre-trained on Massive Data**: Trained on over 2 trillion time series data points, the largest pretraiing dataset for any open-weights time series foundation model to date. Note: this open-source, open-weights model was training **without** any customer data.
+- **Pre-trained on Massive Data**: Trained on over 2 trillion time series data points, the largest pretraiing dataset for any open-weights time series foundation model to date.
 
 
 ### Model Weights
@@ -53,6 +53,7 @@ cd toto
 # Install dependencies
 pip install -r requirements.txt
 ```
+For optimal inference speed, it's recommended to install [xformers](https://github.com/facebookresearch/xformers?tab=readme-ov-file#installing-xformers) and [flash-attention](https://github.com/Dao-AILab/flash-attention?tab=readme-ov-file#installation-and-features) as well.
 
 ### Quick Start
 
@@ -110,12 +111,20 @@ For a comprehensive guide on using Toto for time series forecasting, check out o
 
 - [Basic Inference Tutorial](toto/notebooks/inference_tutorial.ipynb): Learn how to load the model and make forecasts
 
-### Training Data
+### Pre-Training Data
 
 Toto was trained on a diverse mixture of time series datasets:
+
+#### Observability Data
+
+#### Public Datasets
+
+To improve the performance of Toto on general-purpose time series forecasting across many domains, we include publcly availa
 - [GiftEval Pretrain](https://huggingface.co/datasets/Salesforce/GiftEvalPretrain)
-- [Chronos](https://huggingface.co/datasets/autogluon/chronos_datasets)
-- Synthetic data for robustness
+- [Chronos pretraining data](https://huggingface.co/datasets/autogluon/chronos_datasets) (Note: only a subset of this dataset was used to avoid leakage with the GiftEval benchmark)
+
+#### Synthetic Data
+To improve robustness, approximately 1/3 of the pretraining data mix consists of synthetically-generated time series.
 
 ### Requirements
 
@@ -139,6 +148,8 @@ TODO: add arxiv BibTeX
 
 ## License
 Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License - see [LICENSE](LICENSE) file for details.
+
+The BOOM benchmarking data, hosted on Hugging Face, is licensed under the CC-BY-SA-4.0 license - see the [dataset card](https://huggingface.co/datasets/Datadog/BOOM) for details.
 
 This product includes software developed at Datadog (https://www.datadoghq.com/) Copyright 2025 Datadog, Inc.
 
