@@ -113,9 +113,11 @@ For a comprehensive guide on using Toto for time series forecasting, check out o
 
 ### Pre-Training Data
 
-Toto was trained on a diverse mixture of time series datasets:
+Toto was trained on a massive and diverse mixture of time series datasets:
 
 #### Observability Data
+
+The largest portion of pretraining data comes from a dataset of approximately 1 trillion time series points collected from Datadog metrics. These metrics are generated from Datadog's monitoring of internal systems, and **do not** include any customer data. They cover a diverse array of software stacks and types of services, and span wide variety of domains within observability, including application performance, infrastructure, networking, security, databases, and more.
 
 #### Public Datasets
 
