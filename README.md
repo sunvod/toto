@@ -1,8 +1,27 @@
 # Toto - Time Series Optimized Transformer for Observability
+[Paper](#) | [Toto Model Card](#) | [BOOM Dataset Card](#)
 
 Toto is a foundation model for multivariate time series forecasting with a focus on observability metrics. This model leverages innovative architectural designs to efficiently handle the high-dimensional, complex time series that are characteristic of observability data.
 
-## Features
+This repository also hosts the code for evaluating time series models on BOOM (**B**enchmark **o**f **O**bservability **M**etrics), a large-scale forecasting dataset composed of real-world observability data.
+
+## Table of Contents
+- [Toto model](#toto-model)
+  - [Features](#features)
+  - [Model Weights](#model-weights)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Tutorials](#tutorials)
+  - [Training Data](#training-data)
+  - [Requirements](#requirements)
+- [BOOM (Benchmark of Observability Metrics)](#boom-benchmark-of-observability-metrics)
+- [Citation](#citation)
+- [License](#license)
+- [Contributing](#contributing)
+
+## Toto model
+
+### Features
 
 - **Zero-Shot Forecasting**: Perform forecasting without fine-tuning on your specific time series
 - **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
@@ -14,7 +33,7 @@ Toto is a foundation model for multivariate time series forecasting with a focus
 - **Pre-trained on Massive Data**: Trained on over 2 trillion time series data points, the largest pretraiing dataset for any open-weights time series foundation model to date. Note: this open-source, open-weights model was training **without** any customer data.
 
 
-## Model Weights
+### Model Weights
 
 Toto-Open, the open-weights release of Toto, is available on Hugging Face. Currently available checkpoints:
 
@@ -24,7 +43,7 @@ Toto-Open, the open-weights release of Toto, is available on Hugging Face. Curre
 
 
 
-## Installation
+### Installation
 
 ```bash
 # Clone the repository
@@ -35,7 +54,7 @@ cd toto
 pip install -r requirements.txt
 ```
 
-## Quick Start
+### Quick Start
 
 Here's a simple example to get you started with forecasting:
 
@@ -85,24 +104,32 @@ lower_quantile = forecast.quantile(0.1)  # 10th percentile for lower confidence 
 upper_quantile = forecast.quantile(0.9)  # 90th percentile for upper confidence bound
 ```
 
-## Tutorials
+### Tutorials
 
 For a comprehensive guide on using Toto for time series forecasting, check out our tutorial notebooks:
 
 - [Basic Inference Tutorial](toto/notebooks/inference_tutorial.ipynb): Learn how to load the model and make forecasts
 
-## Data
+### Training Data
 
 Toto was trained on a diverse mixture of time series datasets:
 - [GiftEval Pretrain](https://huggingface.co/datasets/Salesforce/GiftEvalPretrain)
 - [Chronos](https://huggingface.co/datasets/autogluon/chronos_datasets)
 - Synthetic data for robustness
 
-## Requirements
+### Requirements
 
 - Python 3.10+
 - PyTorch 2.5+
 - CUDA-capable device (Ampere generation or newer recommended for optimal performance)
+
+## BOOM (Benchmark of Observability Metrics)
+
+The BOOM is a large-scale, real-world time series dataset designed for evaluating models on forecasting tasks in complex observability environments. Collected from a high-volume telemetry system, the benchmark captures the irregularity, structural complexity, and heavy-tailed statistics typical of production observability data. Unlike synthetic or curated benchmarks, BOOM reflects the full diversity and unpredictability of operational signals observed in distributed systems, covering infrastructure, networking, databases, security, and application-level metrics.
+
+For more information on the dataset, including details on its preparation and statistical properties, see the dataset card in Hugging Face.
+
+For example evaluations of different time series models on the BOOM dataset, see the [boom](boom) folder in this repository.
 
 ## Citation
 
