@@ -25,6 +25,6 @@ types-PyYAML==6.0.12.20240917
 black==24.10.0
 isort==5.13.2
 PyYAML==6.0.2
-xformers==0.0.29 --extra-index-url https://download.pytorch.org/whl/cu124
+xformers==0.0.30 --extra-index-url https://download.pytorch.org/whl/cu124
 jupyter==1.1.1
 matplotlib==3.10.1
