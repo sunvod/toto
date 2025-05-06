@@ -1,7 +1,6 @@
 [project]
 name = "Toto"
-version = "0.0.0"
-[project]
+version = "0.1.0"
 dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
