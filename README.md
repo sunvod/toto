@@ -151,8 +151,6 @@ TODO: add arxiv BibTeX
 ## License
 Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License - see [LICENSE](LICENSE) file for details.
 
-The BOOM benchmarking data, hosted on Hugging Face, is licensed under the CC-BY-SA-4.0 license - see the [dataset card](https://huggingface.co/datasets/Datadog/BOOM) for details.
-
 This product includes software developed at Datadog (https://www.datadoghq.com/) Copyright 2025 Datadog, Inc.
 
 ## Contributing
