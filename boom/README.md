@@ -1,6 +1,6 @@
 # BOOM (Benchmark of Observability Metrics) Evaluations
 
-This directory contains example code for evaluating zero-shot foundation models as well as classical baselines against BOOM. For more information on the dataset, see the [dataset card]() in Hugging Face.
+This directory contains example code for evaluating zero-shot foundation models as well as classical baselines against BOOM. For more information on the dataset, see the [dataset card](https://huggingface.co/datasets/Datadog/BOOM) in Hugging Face.
 
 To run evals for Toto, make sure you've followed the installation instructions in this repository.
 
@@ -19,7 +19,7 @@ To run evals for Toto, make sure you've followed the installation instructions i
 Our evaluation methodology is adapted from [Gift-Eval](https://github.com/SalesforceAIResearch/gift-eval). To run these notebooks for each model, you will need to install Gift-Eval as well as the required environment for each model.
 
 ### Toto
-To set up the environment for Toto, follow the instructions in the [README](README.md).
+To set up the environment for Toto, follow the instructions in the [README](/README.md).
 
 Download the following environments to reproduce these notebooks:
 
