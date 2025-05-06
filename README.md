@@ -1,5 +1,5 @@
 # Toto - Time Series Optimized Transformer for Observability
-[Paper](#) | [Toto Model Card](#) | [BOOM Dataset Card](#)
+[Paper](#) | [Toto Model Card](https://huggingface.co/Datadog/Toto-Open-Base-1.0) | [BOOM Dataset Card](https://huggingface.co/datasets/Datadog/BOOM)
 
 Toto is a foundation model for multivariate time series forecasting with a focus on observability metrics. This model leverages innovative architectural designs to efficiently handle the high-dimensional, complex time series that are characteristic of observability data.
 
@@ -24,7 +24,7 @@ This repository also hosts the code for evaluating time series models on BOOM (*
 ### Features
 
 - **Zero-Shot Forecasting**: Perform forecasting without fine-tuning on your specific time series
-- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain ∂xuaromwebenchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
+- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
 [BOOM](https://huggingface.co/datasets/Datadog/BOOM).
 - **Multi-Variate Support**: Efficiently process multiple variables using Proportional Factorized Space-Time Attention
 - **Probabilistic Predictions**: Generate both point forecasts and uncertainty estimates using a Student-T mixture model
@@ -136,9 +136,12 @@ To improve robustness, approximately 1/3 of the pretraining data mix consists of
 
 ## BOOM (Benchmark of Observability Metrics)
 
-The BOOM is a large-scale, real-world time series dataset designed for evaluating models on forecasting tasks in complex observability environments. Collected from a high-volume telemetry system, the benchmark captures the irregularity, structural complexity, and heavy-tailed statistics typical of production observability data. Unlike synthetic or curated benchmarks, BOOM reflects the full diversity and unpredictability of operational signals observed in distributed systems, covering infrastructure, networking, databases, security, and application-level metrics.
+**BOOM** (**B**enchmark **o**f **O**bservability **M**etrics) is a large-scale, real-world time series dataset designed for evaluating models on forecasting tasks in complex observability environments.
+Composed of real-world metrics data collected from Datadog, a leading observability platform, the benchmark captures the irregularity, structural complexity, and heavy-tailed statistics typical of production observability data. Unlike synthetic or curated benchmarks, BOOM reflects the full diversity and unpredictability of operational signals observed in distributed systems, covering infrastructure, networking, databases, security, and application-level metrics.
 
-For more information on the dataset, including details on its preparation and statistical properties, see the dataset card in Hugging Face.
+Note: the metrics comprising BOOM were generated from internal monitoring of pre-production environments, and **do not** include any customer data. 
+
+For more information on the dataset, including details on its preparation and statistical properties, see the [dataset card](https://huggingface.co/datasets/Datadog/BOOM) in Hugging Face.
 
 For example evaluations of different time series models on the BOOM dataset, see the [boom](boom) folder in this repository.
 
