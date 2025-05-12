@@ -47,6 +47,7 @@ BASE_MODEL_KWARGS = {
     "dropout": 0.1,
     "spacewise_every_n_layers": 2,
     "spacewise_first": True,
+    "use_memory_efficient_attention": False,
     "scaler_cls": "<class 'model.scaler.CausalPatchStdMeanScaler'>",
     "output_distribution_classes": ["<class 'model.distribution.MixtureOfStudentTsOutput'>"],
     "output_distribution_kwargs": {
