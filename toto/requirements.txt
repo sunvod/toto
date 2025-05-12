@@ -9,7 +9,7 @@ fsspec==2024.2.0
 gluonts[torch]==0.15.1
 jaxtyping==0.2.29
 mypy==1.11.1
-pandas==1.5.3
+pandas>=2.2.0
 pytest==8.3.5
 pytest-env==1.1.5
 rotary-embedding-torch==0.8.6
@@ -25,6 +25,5 @@ types-PyYAML==6.0.12.20240917
 black==24.10.0
 isort==5.13.2
 PyYAML==6.0.2
-xformers==0.0.30 --extra-index-url https://download.pytorch.org/whl/cu124
 jupyter==1.1.1
 matplotlib==3.10.1

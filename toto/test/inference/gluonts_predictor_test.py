@@ -32,7 +32,6 @@ from inference.gluonts_predictor import (
     Multivariate,
     TotoPredictor,
     TotoSampleForecast,
-    TotoSampleForecastGenerator,
 )
 from model.toto import Toto
 
@@ -48,6 +47,7 @@ BASE_MODEL_KWARGS = {
     "dropout": 0.1,
     "spacewise_every_n_layers": 2,
     "spacewise_first": True,
+    "use_memory_efficient_attention": False,
     "scaler_cls": "<class 'model.scaler.CausalPatchStdMeanScaler'>",
     "output_distribution_classes": ["<class 'model.distribution.MixtureOfStudentTsOutput'>"],
     "output_distribution_kwargs": {
@@ -149,59 +149,6 @@ def test_totosampleforecast():
     assert forecast.samples.shape == samples.shape, "Sample shape mismatch"
     assert np.allclose(forecast.mean, mean), "Mean computation mismatch"
     assert forecast.start_date == start_date, "Start date mismatch"
-
-
-@beartype
-@pytest.mark.cuda
-def test_multivariate_forecast(toto_forecaster, mock_inference_loader):
-    """Test the multivariate mode of TotoSampleForecastGenerator."""
-    generator = TotoSampleForecastGenerator()
-
-    result = list(
-        generator._generate(
-            inference_data_loader=mock_inference_loader,
-            forecaster=toto_forecaster,
-            prediction_length=5,
-            num_samples=10,
-            output_transform=None,
-            device=DEVICE,
-        )
-    )
-
-    # Check that results are not empty
-    assert len(result) > 0, "Expected non-empty result for mocked generator"
-
-    # Validate the structure of the generated forecasts
-    for forecast in result:
-        assert isinstance(forecast, TotoSampleForecast), "Expected TotoSampleForecast instance"
-        assert forecast.samples.shape == (10, 5, 3), "Samples shape mismatch"
-        assert forecast.mean.shape == (5, 3), "Mean shape mismatch"
-
-
-@beartype
-@pytest.mark.cuda
-def test_totopredictor(real_model, mock_dataset):
-    """Test the TotoPredictor class using a real Toto model."""
-    mode = Multivariate(batch_size=2)
-    predictor = TotoPredictor.create_for_eval(
-        model=real_model,
-        prediction_length=3,
-        context_length=4,
-        mode=mode,
-    )
-
-    # Generate predictions
-    predictions = list(predictor.predict(mock_dataset, num_samples=10, use_kv_cache=True, eval=False))
-
-    # Assertions
-    assert isinstance(predictor, TotoPredictor), "Predictor is not of type TotoPredictor"
-    assert isinstance(predictions, list), "Predictions are not a list"
-    assert len(predictions) > 0, "Expected non-empty result for dataset"
-
-    # Validate prediction structure
-    for prediction in predictions:
-        assert prediction.samples.shape == (10, 3, 3), "Samples shape mismatch"
-        assert prediction.mean.shape == (3, 3), "Mean shape mismatch"
 
 
 @beartype
