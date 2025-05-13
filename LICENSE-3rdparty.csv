@@ -1,5 +1,28 @@
-Component,Origin,License,Copyright
-GiftEval,https://github.com/SalesforceAIResearch/gift-eval,Apache-2.0,Copyright (c) 2024 Salesforce AI Research
-Time-MOE, https://github.com/Time-MoE/Time-MoE, Apache-2.0, Copyright (c) 2023 Salesforce Inc.
-Large-Time-Series-Model, https://github.com/thuml/Large-Time-Series-Model/, MIT, Copyright (c) 2021 THUML @ Tsinghua University
-VisionTS, https://github.com/Keytoyze/VisionTS/, MIT, Copyright (c) 2024 Mouxiang Chen
+"component","origin","license","copyright"
+"aioboto3","aioboto3","['Apache-2.0']","['Nikolai Novik']"
+"beartype","beartype","['MIT']","['Beartype Authors']"
+"black","black","['MIT']","['Python Software Foundation', 'Corporation for National Research Initiatives', 'Elemental Security', 'Google Inc.', ' Lukasz Langa and contributors', 'Stichting Mathematisch Centrum Amsterdam, The Netherlands', 'Reece Hart']"
+"boto3","boto3","['Apache-2.0']","['Amazon.com Inc. or its affiliates']"
+"com.github.DataDog/toto-ospo-playground","git+https://github.com/DataDog/toto-ospo-playground","['Apache-2.0']","['Datadog, Inc.']"
+"datasets","datasets","['Apache-2.0']","['HuggingFace Inc.', 'Optuna', 'The HuggingFace Datasets', 'The TensorFlow Datasets', 'NVIDIA CORPORATION.']"
+"dill","dill","['BSD-2-Clause AND BSD-3-Clause']","['Marius Gedminas', 'California Institute of Technology', 'PiCloud', 'Stefano Rivera', 'science+computing', 'The Uncertainty Quantification Foundation', ' Regents of the University of California']"
+"einops","einops","['MIT']","['Alex Rogozhnikov']"
+"fsspec","fsspec","['BSD-2-Clause AND BSD-3-Clause']","[' Martin Durant']"
+"gluonts","gluonts","['Apache-2.0']","['Amazon.com, Inc. or its affiliates', 'Chin-Wei Huang']"
+"isort","isort","['MIT']","['Timothy Edmund Crosley']"
+"jaxtyping","jaxtyping","['MIT']","['Alex Gronholm', 'Google LLC']"
+"jupyter","jupyter","['BSD-2-Clause AND BSD-3-Clause']","['Adobe Systems Incorporated', 'IPython Development Team', 'Jupyter Development Team', 'Project Jupyter Contributors']"
+"matplotlib","matplotlib","['PSF-2.0']","['Adobe Systems Incorporated', 'American Mathematical Society', 'Andrew Straw', 'Bartosz Telenczuk', 'Basil K. Malyshev', 'Bitstream Inc.', 'Cambridge', 'Cynthia Brewer', 'Darren Dale', 'David Turner', 'Doug Hellmann', 'Elsevier', 'Eric Firing', 'Ethan Schoonover', 'Fredrik Lundh', 'Google Inc.', 'Hansruedi Baer', 'Jean-loup Gailly', 'Jeremy O\'Donoghue and others', 'John Gill', 'John Hunter', 'John Horigan', 'Kevin B. Kenny', 'Lucent Technologies', 'Mark Harrower', 'Matplotlib Development Team', 'Maxim Shemanarev', 'Michael Droettboom', 'MicroPress', 'Pierre Raybaut', 'Robert Wilhelm', 'Scriptics Corporation', 'Sun Microsystems', 'Tavmjung Bah', 'The Meson development team', 'The Pennsylvania State University', 'The Regents of the University of California', 'Tony Juricic', 'TyPoland Lukasz Dziedzic', 'Werner Lemberg', 'Xa9', 'the STI Pub Companies']"
+"mypy","mypy","['MIT']","['Python Software Foundation', 'Corporation for National Research Initiatives', 'Jukka Lehtosalo and contributors', 'Dropbox', 'The Pybind Development Team', 'Contributors to the pythoncapi_compat project.', 'Google Inc.', 'Stichting Mathematisch Centrum Amsterdam, The Netherlands', ' Jukka Lehtosalo and mypy contributors', ' mypyc team']"
+"pandas","pandas","['BSD-3-Clause']","['AQR Capital Management, LLC', 'Lambda Foundry, Inc.', 'PyData Development Team']"
+"pytest","pytest","['MIT']","['Holger Krekel and others']"
+"pytest-env","pytest-env","['MIT']","['The pytest-env']"
+"pyyaml","pyyaml","['MIT']","['Ingy dot Net', 'Kirill Simonov']"
+"rotary-embedding-torch","rotary-embedding-torch","['MIT']","['Phil Wang']"
+"s3fs","s3fs","['BSD-3-Clause]","['Continuum Analytics, Inc. and contributors']"
+"scikit-learn","scikit-learn","['BSD-2-Clause AND BSD-3-Clause']","['OpenJS Foundation and other contributors', 'INRIA', 'Python Software Foundation', 'Chih-Chung Chang and Chih-Jen Lin', 'Holger Krekel and others', 'David Cournapeau', 'Fabian Pedregosa', 'Olivier Grisel', 'The LIBLINEAR Project', 'The scikit-learn', 'David Warde-Farley', 'Renato de Pontes Pereira', 'Donald Stufft and individual contributors', 'The Bootstrap Authors', 'Twitter', 'Steven Loria', 'Jon Lund Steffensen', 'Leland McInnes', 'University of Amsterdam', 'Aric Hagberg', 'pandas', 'scikit-learn']"
+"torch","https://pytorch.org/","[BSD-3-Clause]","['The Pytorch Authors']"
+"tqdm","tqdm","['MIT AND MPL-2.0']","['Noam Yorav-Raphael', 'Casper da Costa-Luis']"
+"transformers","transformers","['Apache-2.0']","['The Hugging Face team. All rights reserved.']"
+"types-pyyaml","https://github.com/python/typeshed","['Apache-2.0']","['Jukka Lehtosalo and contributors']"
+"types-tabulate","types-tabulate","['Apache-2.0 AND MIT']","['Jukka Lehtosalo and contributors']"
