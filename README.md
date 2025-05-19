@@ -31,7 +31,7 @@ This repository also hosts the code for evaluating time series models on BOOM (*
 - **Probabilistic Predictions**: Generate both point forecasts and uncertainty estimates using a Student-T mixture model
 - **High-Dimensional Support**: Handle time series with a large number of variables efficiently
 - **Decoder-Only Architecture**: Support for variable prediction horizons and context lengths
-- **Pre-trained on Massive Data**: Trained on over 2 trillion time series data points, the largest pretraiing dataset for any open-weights time series foundation model to date.
+- **Pre-trained on Massive Data**: Trained on over 2 trillion time series data points, the largest pretraining dataset for any open-weights time series foundation model to date.
 
 
 ### Model Weights
@@ -50,6 +50,10 @@ Toto-Open, the open-weights release of Toto, is available on Hugging Face. Curre
 # Clone the repository
 git clone https://github.com/DataDog/toto.git
 cd toto
+
+# Optional: create a virtual environment
+python -m venv .venv
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
