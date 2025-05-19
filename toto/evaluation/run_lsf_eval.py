@@ -114,7 +114,7 @@ def get_parser():
         type=int,
         default=1,
         help="Batch size to use for evaluation. Multiply by samples_per_batch to get effective batch size.",
-    )  # TODO(Anna) - should we remove this to avoid confusion with samples_per_batch?
+    )
 
     parser.add_argument(
         "--samples-per-batch",
@@ -135,7 +135,7 @@ def get_parser():
         type=bool,
         default=True,
         help="Whether to use key-value caching during inference.",
-    )  # TODO(Anna) - should this be configurable?
+    )
     parser.add_argument(
         "--checkpoint-path",
         type=str,

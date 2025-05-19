@@ -94,7 +94,7 @@ class LSFDataset:
         else:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 
-        if mode == "S":  # TODO(Anna) - should we just support M mode?
+        if mode == "S":
             self.target_dim = 1
             self.past_feat_dynamic_real_dim = 0
         elif mode == "M":
