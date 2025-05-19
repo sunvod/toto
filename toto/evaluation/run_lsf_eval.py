@@ -40,7 +40,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 LSF_DATASETS_LOCAL_PATH = "./data/lsf_datasets"
-CPUS_PER_WORKER = 4
 
 
 def get_parser():
