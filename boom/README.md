@@ -46,7 +46,7 @@ python -m venv "/venvs/${MODEL_NAME}_eval_env"
 source "/venvs/${MODEL_NAME}_eval_env/bin/activate"
 ```
 
-Then follow the intallation instructions within each of the repository for enviornment setup.
+Then follow the installation instructions within each repository for environment setup.
 
 After setting up the model specific environment, we then install Gift-Eval for dataloading and processing
 ```sh
