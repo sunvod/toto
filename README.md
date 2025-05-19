@@ -15,6 +15,8 @@ This repository also hosts the code for evaluating time series models on BOOM (*
   - [Training Data](#training-data)
   - [Evaluation](#evaluation)
     - [LSF Evaluation](#lsf-evaluation)
+    - [GIFT-Eval Evaluation](#gift-eval-evaluation)
+    - [BOOM Evaluation](#boom-evaluation)
   - [Requirements](#requirements)
 - [BOOM (Benchmark of Observability Metrics)](#boom-benchmark-of-observability-metrics)
 - [Citation](#citation)
@@ -185,6 +187,21 @@ The script evaluates Toto's performance using Mean Absolute Error (MAE) and Mean
 
 
 To reproduce the results presented in the paper, use the default arguments while setting `--eval-stride 1` and specifying all datasets with `--datasets ETTh1 ETTh2 ETTm1 ETTm2 weather electricity`.
+
+#### GIFT-Eval Evaluation
+
+To reproduce our results on the GIFT-Eval benchmark, we provide a dedicated notebook:
+
+- [GIFT-Eval Evaluation Notebook](toto/evaluation/gift_eval/toto.ipynb): Step-by-step instructions for running Toto on the GIFT-Eval benchmark and reproducing the reported results.
+
+#### BOOM Evaluation
+
+For evaluating Toto on the BOOM (Benchmark of Observability Metrics) dataset, refer to:
+
+- [BOOM Evaluation Notebook](boom/notebooks/toto.ipynb): Example workflow for running Toto on the BOOM dataset.
+- [BOOM README](boom/README.md): Detailed instructions and scripts for benchmarking on BOOM.
+
+These resources provide all necessary steps to run and reproduce BOOM evaluation results with Toto.
 
 ### Requirements
 
