@@ -77,9 +77,7 @@ class LSFDataset:
         ValueError: If an unknown dataset name or mode is provided.
     """
 
-    def __init__(
-        self, dataset_name: LSFDatasetName, mode: str = "S", split: str = "test", lsf_path: str = "/home/jovyan/data/"
-    ):
+    def __init__(self, dataset_name: LSFDatasetName, mode: str = "S", split: str = "test", lsf_path: str = "./data/"):
         self.dataset_name = dataset_name
         self.mode = mode
         self.split = split
@@ -176,10 +174,9 @@ class LSFDataset:
 
     def _load_custom(self, data_path: str, freq: str):
         df = pd.read_csv(os.path.join(self.lsf_path, data_path))
-        cols = list(df.columns)
-        cols.remove("OT")
-        cols.remove("date")
-        df = df[["date"] + cols + ["OT"]]
+        # Reorder columns: put 'date' first, 'OT' last, rest in between
+        feature_cols = [col for col in df.columns if col not in ("date", "OT")]
+        df = df[["date"] + feature_cols + ["OT"]]
         data = df[df.columns[1:]]
 
         train_length = int(len(data) * 0.7)
