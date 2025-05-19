@@ -26,7 +26,7 @@ This repository also hosts the code for evaluating time series models on BOOM (*
 ### Features
 
 - **Zero-Shot Forecasting**: Perform forecasting without fine-tuning on your specific time series
-- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
+- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GIFT-Eval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
 [BOOM](https://huggingface.co/datasets/Datadog/BOOM).
 - **Multi-Variate Support**: Efficiently process multiple variables using Proportional Factorized Space-Time Attention
 - **Probabilistic Predictions**: Generate both point forecasts and uncertainty estimates using a Student-T mixture model
