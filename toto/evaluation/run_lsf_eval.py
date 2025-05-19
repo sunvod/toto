@@ -5,7 +5,7 @@
 
 """
 This script evaluates a TOTO model on LSF datasets using a specified checkpoint dir path or model id.
-It supports evaluating multiple datasets, prediction lengths, and context lengths in parallel using Ray.
+It supports evaluating multiple datasets, prediction lengths, and context lengths.
 The evaluation results are summarized and displayed in a tabular format.
 
 Example usage:
@@ -14,20 +14,17 @@ python toto/evaluation/run_lsf_eval.py \
     --datasets ETTh1 \
     --context-length 2048 \
     --eval-stride 1 \
-    --checkpoint-path [CHECKPOINT-NAME-OR-DIR] \
-    --num-gpus 2
+    --checkpoint-path [CHECKPOINT-NAME-OR-DIR]
 """
 
 import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import List
 import logging
 
 import numpy as np
 import pandas as pd
-import ray
 import torch
 from tabulate import tabulate
 
@@ -48,13 +45,6 @@ CPUS_PER_WORKER = 4
 
 def get_parser():
     parser = argparse.ArgumentParser(description="Evaluate a TOTO model on LSF datasets.")
-
-    parser.add_argument(
-        "--num-gpus",
-        type=int,
-        default=1,
-        help="Number of GPUs to use for evaluation. Will be used to parallelize across datasets.",
-    )
 
     parser.add_argument(
         "--datasets",
@@ -149,6 +139,10 @@ def get_parser():
 
 @dataclass(frozen=True)
 class EvalTask:
+    """
+    A dataclass representing an evaluation task for a TOTO model on LSF datasets.
+    """
+
     dataset: LSFDatasetName
     checkpoint_path: str
     data_split: str
@@ -197,11 +191,6 @@ def evaluate_checkpoint(task: EvalTask) -> pd.DataFrame:
     return evalutions
 
 
-@ray.remote(num_cpus=CPUS_PER_WORKER, num_gpus=1)
-def evaluate_checkpoints(tasks: list[EvalTask]) -> pd.DataFrame:
-    return pd.concat([evaluate_checkpoint(task) for task in tasks])
-
-
 def main():
     parser = get_parser()
     args = parser.parse_args()
@@ -230,26 +219,10 @@ def main():
         for context_length in args.context_lengths
     ]
 
-    # Batch tasks to send to workers
-    num_gpus = min(args.num_gpus, len(tasks))
-    logger.info(f"Using {num_gpus} GPUs for evaluation.")
-
-    batches: List[List[EvalTask]] = [[] for _ in range(num_gpus)]
-    for i, task in enumerate(tasks):
-        batches[i % num_gpus].append(task)
-
-    logger.info(f"Eval tasks per GPU: {[len(batch) for batch in batches]}")
-
-    assert len(batches) == num_gpus, "Each GPU should have a batch of tasks."
-    assert all(len(batch) > 0 for batch in batches), "Each batch should have at least one task."
-    assert sum(len(batch) for batch in batches) == len(tasks), "All tasks should be assigned to a batch."
-
-    # Distribute tasks to workers to evaluate checkpoints in parallel
-    result_refs = [evaluate_checkpoints.remote(batch) for batch in batches]
-    task_results = ray.get(result_refs)
+    # Run evaluation tasks sequentially - concatenate all results
+    results: pd.DataFrame = pd.concat([evaluate_checkpoint(task) for task in tasks])
 
     # Combine results and summarize
-    results = pd.concat(task_results)
     summary_results = results.groupby(["checkpoint", "dataset"]).mean()
     print(
         tabulate(
