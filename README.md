@@ -169,8 +169,7 @@ python toto/evaluation/run_lsf_eval.py \
     --datasets ETTh1 \
     --context-length 2048 \
     --eval-stride 1 \
-    --checkpoint-path [CHECKPOINT-NAME-OR-DIR] \
-    --num-gpus 2
+    --checkpoint-path [CHECKPOINT-NAME-OR-DIR]
 ```
 
 
@@ -179,9 +178,6 @@ To see all available options for the evaluation script, you can use the `--help`
 ```bash
 python toto/evaluation/run_lsf_eval.py --help
 ```
-
-> **Note**  
-The evaluation script uses [Ray](https://www.ray.io/) to distribute evaluation tasks across multiple GPUs for faster execution. You can control the number of GPUs used by specifying the `--num-gpus` option. Setting `--num-gpus 1` will execute the evaluation sequentially on a single GPU.
 
 ##### Expected Results
 The script evaluates Toto's performance using Mean Absolute Error (MAE) and Mean Squared Error (MSE) across the specified datasets, context lengths, and prediction lengths. It displays a detailed table of results for each prediction length, along with a summary table that averages the results across prediction lengths for each dataset.
