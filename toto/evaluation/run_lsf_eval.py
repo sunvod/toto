@@ -23,6 +23,7 @@ import os
 import sys
 from dataclasses import dataclass
 from typing import List
+import logging
 
 import numpy as np
 import pandas as pd
@@ -37,6 +38,9 @@ from toto.evaluation.lsf.lsf_datasets import LSFDatasetName
 from toto.evaluation.lsf.lsf_evaluator import LSFEvaluator
 from toto.inference.gluonts_predictor import Multivariate
 from toto.model.toto import Toto
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 LSF_DATASETS_LOCAL_PATH = "./data/lsf_datasets"
 CPUS_PER_WORKER = 4
@@ -162,7 +166,7 @@ def evaluate_checkpoint(task: EvalTask) -> pd.DataFrame:
     """
     Evaluate a TOTO model on LSF datasets.
 
-    Fetches the model from Huggingface Hub, evaluates it on LSF datasets, and returns the evaluation results
+    Fetches the model from Hugging Face Hub, evaluates it on LSF datasets, and returns the evaluation results
     as a DataFrame.
     """
     torch.use_deterministic_algorithms(True)
@@ -204,7 +208,7 @@ def main():
 
     checkpoint_path = args.checkpoint_path
 
-    print(f"Evaluating checkpoint: {checkpoint_path}")
+    logger.info(f"Evaluating checkpoint: {checkpoint_path}")
 
     # Create an evaluation task for each checkpoint
     tasks = [
@@ -228,13 +232,13 @@ def main():
 
     # Batch tasks to send to workers
     num_gpus = min(args.num_gpus, len(tasks))
-    print(f"Using {num_gpus} GPUs for evaluation.")
+    logger.info(f"Using {num_gpus} GPUs for evaluation.")
 
     batches: List[List[EvalTask]] = [[] for _ in range(num_gpus)]
     for i, task in enumerate(tasks):
         batches[i % num_gpus].append(task)
 
-    print(f"Eval tasks per GPU: {[len(batch) for batch in batches]}")
+    logger.info(f"Eval tasks per GPU: {[len(batch) for batch in batches]}")
 
     assert len(batches) == num_gpus, "Each GPU should have a batch of tasks."
     assert all(len(batch) > 0 for batch in batches), "Each batch should have at least one task."
