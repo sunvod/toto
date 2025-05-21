@@ -13,6 +13,10 @@ This repository also hosts the code for evaluating time series models on BOOM (*
   - [Quick Start](#quick-start)
   - [Tutorials](#tutorials)
   - [Training Data](#training-data)
+  - [Evaluation](#evaluation)
+    - [LSF Evaluation](#lsf-evaluation)
+    - [GIFT-Eval Evaluation](#gift-eval-evaluation)
+    - [BOOM Evaluation](#boom-evaluation)
   - [Requirements](#requirements)
 - [BOOM (Benchmark of Observability Metrics)](#boom-benchmark-of-observability-metrics)
 - [Citation](#citation)
@@ -24,7 +28,7 @@ This repository also hosts the code for evaluating time series models on BOOM (*
 ### Features
 
 - **Zero-Shot Forecasting**: Perform forecasting without fine-tuning on your specific time series
-- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GiftEval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
+- **State-of-the-Art Performance**: Achieves top scores in benchmarks covering diverse time series forecasting tasks. This includes the established multi-domain benchmark [GIFT-Eval](https://huggingface.co/spaces/Salesforce/GIFT-Eval), as well as our own observability-focused benchmark
 [BOOM](https://huggingface.co/datasets/Datadog/BOOM).
 - **Multi-Variate Support**: Efficiently process multiple variables using Proportional Factorized Space-Time Attention
 - **Probabilistic Predictions**: Generate both point forecasts and uncertainty estimates using a Student-T mixture model
@@ -131,6 +135,73 @@ To improve the performance of Toto on general-purpose time series forecasting ac
 
 #### Synthetic Data
 To improve robustness, approximately 1/3 of the pretraining data mix consists of synthetically-generated time series.
+
+
+### Evaluation
+Toto has been rigorously evaluated on multiple benchmarks, including both general-purpose datasets and observability-focused datasets like BOOM. Below, we provide instructions for reproducing our evaluation results.
+
+#### LSF Evaluation
+
+To reproduce our results on the LSF datasets, follow these steps:
+
+##### Downloading the Datasets
+
+The LSF evaluation requires three datasets: ETT, Electricity, and Weather. You can download them from the [Time-Series-Library repository](https://github.com/thuml/Time-Series-Library). Follow the instructions in the [repository](https://github.com/thuml/Time-Series-Library#:~:text=r%20requirements.txt-,Prepare,-Data.%20You%20can) to obtain the following already pre-processed datasets:
+
+- **[ETT (Electricity Transformer Temperature)](https://drive.google.com/file/d/1bnrv7gpn27yO54WJI-vuXP5NclE5BlBx/view?usp=drive_link)**: Includes four subsets: ETTh1, ETTh2, ETTm1, and ETTm2.
+- **[Electricity](https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=drive_link)**
+- **[Weather](https://drive.google.com/file/d/1nXdMIJ7K201Bx3IBGNiaNFQ6FzeDEzIr/view?usp=drive_link)**
+
+After downloading, ensure the datasets are placed in the `data/lsf_datasets/` directory within the repository, with the following structure:
+
+```
+data/
+└── lsf_datasets/
+  ├── ETT-small/
+  ├── electricity/
+  └── weather/
+```
+
+##### Running the Evaluation Script
+
+Once the datasets are set up, you can run the LSF evaluation script as follows to reproduce our results:
+```bash
+export CUBLAS_WORKSPACE_CONFIG=:4096:8  # For reproducible GPU results
+export PYTHONPATH="$(pwd):$(pwd)/toto:$PYTHONPATH"  # Add current and "toto" dirs to Python module search path
+python toto/evaluation/run_lsf_eval.py \
+    --datasets ETTh1 \
+    --context-length 2048 \
+    --eval-stride 1 \
+    --checkpoint-path [CHECKPOINT-NAME-OR-DIR]
+```
+
+
+To see all available options for the evaluation script, you can use the `--help` flag:
+
+```bash
+python toto/evaluation/run_lsf_eval.py --help
+```
+
+##### Expected Results
+The script evaluates Toto's performance using Mean Absolute Error (MAE) and Mean Squared Error (MSE) across the specified datasets, context lengths, and prediction lengths. It displays a detailed table of results for each prediction length, along with a summary table that averages the results across prediction lengths for each dataset.
+
+
+To reproduce the results presented in the paper, use the default arguments while setting `--eval-stride 1` and specifying all datasets with `--datasets ETTh1 ETTh2 ETTm1 ETTm2 weather electricity`.
+
+#### GIFT-Eval Evaluation
+
+To reproduce our results on the GIFT-Eval benchmark, we provide a dedicated notebook:
+
+- [GIFT-Eval Evaluation Notebook](toto/evaluation/gift_eval/toto.ipynb): Step-by-step instructions for running Toto on the GIFT-Eval benchmark and reproducing the reported results.
+
+#### BOOM Evaluation
+
+For evaluating Toto on the BOOM (Benchmark of Observability Metrics) dataset, refer to:
+
+- [BOOM Evaluation Notebook](boom/notebooks/toto.ipynb): Example workflow for running Toto on the BOOM dataset.
+- [BOOM README](boom/README.md): Detailed instructions and scripts for benchmarking on BOOM.
+
+These resources provide all necessary steps to run and reproduce BOOM evaluation results with Toto.
 
 ### Requirements
 
