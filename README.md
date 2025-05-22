@@ -1,5 +1,5 @@
 # Toto - Time Series Optimized Transformer for Observability
-[Paper](https://www.datadoghq.com/pdf/blog/opentoto_v2.pdf) | [Toto Model Card](https://huggingface.co/Datadog/Toto-Open-Base-1.0) | [BOOM Dataset Card](https://huggingface.co/datasets/Datadog/BOOM) | [Blogpost](https://www.datadoghq.com/blog/ai/toto-boom-unleashed/)
+[Paper](https://arxiv.org/abs/2505.14766) | [Toto Model Card](https://huggingface.co/Datadog/Toto-Open-Base-1.0) | [BOOM Dataset Card](https://huggingface.co/datasets/Datadog/BOOM) | [Blogpost](https://www.datadoghq.com/blog/ai/toto-boom-unleashed/)
 
 Toto is a foundation model for multivariate time series forecasting with a focus on observability metrics. This model leverages innovative architectural designs to efficiently handle the high-dimensional, complex time series that are characteristic of observability data.
 
