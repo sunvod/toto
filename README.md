@@ -224,7 +224,17 @@ For example evaluations of different time series models on the BOOM dataset, see
 
 If you use Toto in your research, please cite our work:
 
-TODO: add arxiv BibTeX
+```bibtex
+@misc{cohen2025timedifferentobservabilityperspective,
+      title={This Time is Different: An Observability Perspective on Time Series Foundation Models}, 
+      author={Ben Cohen and Emaad Khwaja and Youssef Doubli and Salahidine Lemaachi and Chris Lettieri and Charles Masson and Hugo Miccinilli and Elise Ramé and Qiqi Ren and Afshin Rostamizadeh and Jean Ogier du Terrail and Anna-Monica Toon and Kan Wang and Stephan Xie and Zongzhe Xu and Viktoriya Zhukova and David Asker and Ameet Talwalkar and Othmane Abou-Amal},
+      year={2025},
+      eprint={2505.14766},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2505.14766}, 
+}
+```
 
 ## License
 Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License - see [LICENSE](LICENSE) file for details.
