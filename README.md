@@ -107,7 +107,7 @@ forecast = forecaster.forecast(
 )
 
 # Access results
-mean_prediction = forecast.mean  # Point forecasts
+median_prediction = forecast.median  # Point forecasts
 prediction_samples = forecast.samples  # Probabilistic samples
 lower_quantile = forecast.quantile(0.1)  # 10th percentile for lower confidence bound
 upper_quantile = forecast.quantile(0.9)  # 90th percentile for upper confidence bound
