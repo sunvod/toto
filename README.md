@@ -67,6 +67,8 @@ For optimal inference speed, it's recommended to install [xformers](https://gith
 
 Here's a simple example to get you started with forecasting:
 
+⚠️ In our study, we take the **median** across 256 samples to produce a point forecast. This tutorial previously used the **mean** but has now been updated.
+
 ```python
 import torch
 from data.util.dataset import MaskedTimeseries
@@ -107,7 +109,7 @@ forecast = forecaster.forecast(
 )
 
 # Access results
-mean_prediction = forecast.mean  # Point forecasts
+median_prediction = forecast.median  # Point forecasts
 prediction_samples = forecast.samples  # Probabilistic samples
 lower_quantile = forecast.quantile(0.1)  # 10th percentile for lower confidence bound
 upper_quantile = forecast.quantile(0.9)  # 90th percentile for upper confidence bound
