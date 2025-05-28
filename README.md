@@ -67,6 +67,8 @@ For optimal inference speed, it's recommended to install [xformers](https://gith
 
 Here's a simple example to get you started with forecasting:
 
+⚠️ In our study, we take the **median** across 256 samples to produce a point forecast. This tutorial previously used the **mean** but has now been updated.
+
 ```python
 import torch
 from data.util.dataset import MaskedTimeseries
