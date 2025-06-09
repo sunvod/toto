@@ -21,7 +21,7 @@ skip_if_no_xformers()
 set_default_dtype()
 
 
-from data.util.dataset import MaskedTimeseries
+from datasets.util.dataset import MaskedTimeseries
 from inference.forecaster import Forecast, TotoForecaster
 from model.backbone import PatchEmbedding, TotoBackbone
 
