@@ -12,6 +12,10 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
+from toto.data.util.dataset import MaskedTimeseries
+from toto.inference.forecaster import TotoForecaster
+from toto.model.toto import Toto
+
 # Set up environment
 project_root = os.path.dirname(os.path.abspath(__file__))
 toto_path = os.path.join(project_root, "toto")
@@ -25,9 +29,7 @@ os.environ["PYTHONPATH"] = f"{project_root}:{toto_path}:{os.environ.get('PYTHONP
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 torch.use_deterministic_algorithms(True)
 
-from data.util.dataset import MaskedTimeseries
-from inference.forecaster import TotoForecaster
-from model.toto import Toto
+
 
 def load_csv_with_date_range(file_path, train_start=None, train_end=None, test_start=None, test_end=None):
     """

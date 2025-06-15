@@ -16,6 +16,9 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+from toto.data.util.dataset import MaskedTimeseries
+from toto.model.toto import Toto
+
 # Set up environment
 project_root = os.path.dirname(os.path.abspath(__file__))
 toto_path = os.path.join(project_root, "toto")
@@ -25,9 +28,6 @@ sys.path.insert(0, toto_path)
 os.environ["PYTHONPATH"] = f"{project_root}:{toto_path}:{os.environ.get('PYTHONPATH', '')}"
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 torch.use_deterministic_algorithms(True)
-
-from data.util.dataset import MaskedTimeseries
-from model.toto import Toto
 
 
 class VeniceDataset(Dataset):
