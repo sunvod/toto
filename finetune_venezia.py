@@ -29,6 +29,10 @@ os.environ["PYTHONPATH"] = f"{project_root}:{toto_path}:{os.environ.get('PYTHONP
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 torch.use_deterministic_algorithms(True)
 
+# Fix imports
+import sys
+sys.path.insert(0, os.path.join(project_root, 'toto'))
+
 
 class VeniceDataset(Dataset):
     """Dataset for Venice water level time series."""
