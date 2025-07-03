@@ -7,16 +7,8 @@ Usage: python run_csv_test.py <csv_file> [--train-start YYYY-MM-DD] [--train-end
 import os
 import sys
 import argparse
-import pandas as pd
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
 
-from toto.data.util.dataset import MaskedTimeseries
-from toto.inference.forecaster import TotoForecaster
-from toto.model.toto import Toto
-
-# Set up environment
+# Set up environment BEFORE imports
 project_root = os.path.dirname(os.path.abspath(__file__))
 toto_path = os.path.join(project_root, "toto")
 
@@ -27,6 +19,17 @@ sys.path.insert(0, toto_path)
 # Set environment variables
 os.environ["PYTHONPATH"] = f"{project_root}:{toto_path}:{os.environ.get('PYTHONPATH', '')}"
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
+# NOW do the imports
+import pandas as pd
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+
+from toto.data.util.dataset import MaskedTimeseries
+from toto.inference.forecaster import TotoForecaster
+from toto.model.toto import Toto
+
 torch.use_deterministic_algorithms(True)
 
 
