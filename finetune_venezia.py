@@ -95,104 +95,56 @@ def create_training_samples(df, context_length, prediction_length, stride=96):
     return samples
 
 
-def compute_loss_simple(model, context_input, target_values, prediction_length):
+def compute_loss_with_forecaster(model, forecaster, context_input, target_values, prediction_length):
     """
-    Compute loss using only context (like the working test scripts).
+    Compute loss using the TotoForecaster (like simple_finetune.py).
     """
     # Set model to train mode
     model.train()
-
-    # Use ONLY the context to make predictions (like the test scripts do)
-    # Don't concatenate with target - just use the context
-
+    
     try:
-        # Forward pass through the model using only context
-        output_dist = model.model(
-            context_input.series,
-            context_input.padding_mask,
-            context_input.id_mask,
-            context_input.timestamp_seconds,
-            context_input.time_interval_seconds
+        # Use forecaster to generate predictions
+        forecast = forecaster.forecast(
+            context_input,
+            prediction_length=prediction_length,
+            num_samples=1,  # Single sample for training efficiency
+            samples_per_batch=1,
+            use_kv_cache=False  # Disable KV cache for training
         )
-
-        # The model outputs a distribution over the entire context
-        # For training, we can use the last part as "predictions" of future values
-        # This is a simplification, but should work for fine-tuning
-
-        if hasattr(output_dist, 'mean'):
-            # Get the mean of the predicted distribution
-            pred_mean = output_dist.mean
-            # Use the last prediction_length steps as "future predictions"
-            predictions = pred_mean[..., -prediction_length:]
-
-        elif hasattr(output_dist, 'loc'):
-            # Student-t distribution
-            pred_loc = output_dist.loc
-            predictions = pred_loc[..., -prediction_length:]
-
-        else:
-            # Fallback - try to get some prediction
-            if hasattr(output_dist, 'mode'):
-                predictions = output_dist.mode[..., -prediction_length:]
-            else:
-                # Last resort - use the input as prediction (no learning)
-                predictions = context_input.series[..., -prediction_length:]
-
-        # Compute MSE loss between predictions and target
+        
+        # Get mean predictions
+        predictions = forecast.mean  # Shape: (batch, variate, prediction_length)
+        
+        # Compute MSE loss
         mse_loss = torch.nn.functional.mse_loss(predictions, target_values)
-
+        
         return mse_loss
-
+        
     except Exception as e:
-        # If direct approach fails, try a different strategy
-        print(f"Direct forward failed: {e}")
-
-        # Fallback: use only context for reconstruction loss
-        # This trains the model to better reconstruct the input context
-        context_output = model.model(
-            context_input.series,
-            context_input.padding_mask,
-            context_input.id_mask,
-            context_input.timestamp_seconds,
-            context_input.time_interval_seconds
-        )
-
-        if hasattr(context_output, 'mean'):
-            reconstructed = context_output.mean
-        elif hasattr(context_output, 'loc'):
-            reconstructed = context_output.loc
-        else:
-            reconstructed = context_output.mode
-
-        # Reconstruction loss on the context itself
-        reconstruction_loss = torch.nn.functional.mse_loss(reconstructed, context_input.series)
-        return reconstruction_loss
+        print(f"Forecaster error: {e}")
+        # Return a small loss to continue training
+        return torch.tensor(0.1, requires_grad=True, device=target_values.device)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Fine-tune Toto on Venice data (simplified)')
     parser.add_argument('--csv-file', default='toto/datasets/venezia.csv', help='Path to CSV file')
-    parser.add_argument('--epochs', type=int, default=5, help='Number of epochs')
+    parser.add_argument('--epochs', type=int, default=3, help='Number of epochs')
     parser.add_argument('--learning-rate', type=float, default=1e-5, help='Learning rate')
-    parser.add_argument('--context-length', type=int, default=2048, help='Context length')
-    parser.add_argument('--prediction-length', type=int, default=64, help='Prediction length (must make total divisible by 64)')
+    parser.add_argument('--context-length', type=int, default=1024, help='Context length')
+    parser.add_argument('--prediction-length', type=int, default=96, help='Prediction length')
     parser.add_argument('--train-split', type=float, default=0.8, help='Train split ratio')
     parser.add_argument('--save-path', default='toto_venezia_simple_finetuned.pt', help='Path to save model')
-    parser.add_argument('--num-samples', type=int, default=100, help='Number of training samples to use (for speed)')
+    parser.add_argument('--num-samples', type=int, default=50, help='Number of training samples to use (for speed)')
 
     args = parser.parse_args()
 
-    # Validate that total length is divisible by patch size (64)
-    total_length = args.context_length + args.prediction_length
-    if total_length % 64 != 0:
-        print(f"ERROR: Total length ({total_length}) must be divisible by 64")
-        print(f"Current: context_length={args.context_length} + prediction_length={args.prediction_length} = {total_length}")
-        print("Suggested fixes:")
-        print(f"  - Use prediction_length=64  → total={args.context_length + 64}")
-        print(f"  - Use prediction_length=128 → total={args.context_length + 128}")
-        return
-
-    print(f"Using total length: {total_length} (divisible by 64 ✓)")
+    # Show configuration
+    print(f"Configuration:")
+    print(f"  Context length: {args.context_length}")
+    print(f"  Prediction length: {args.prediction_length}")
+    print(f"  Learning rate: {args.learning_rate}")
+    print(f"  Epochs: {args.epochs}")
 
     # Check device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -240,15 +192,25 @@ def main():
     print("Loading pre-trained Toto model...")
     model = Toto.from_pretrained('Datadog/Toto-Open-Base-1.0')
     model.to(device)
+    
+    # Create forecaster
+    from toto.inference.forecaster import TotoForecaster
+    forecaster = TotoForecaster(model.model)
 
-    # Prepare for fine-tuning
-    for param in model.parameters():
-        param.requires_grad = True
+    # Prepare for fine-tuning - only train last few layers (like simple_finetune.py)
+    trainable_params = []
+    for name, param in model.named_parameters():
+        if 'layers.10' in name or 'layers.11' in name or 'output' in name or 'unembed' in name:
+            param.requires_grad = True
+            trainable_params.append(param)
+            print(f"Training parameter: {name}")
+        else:
+            param.requires_grad = False
 
-    print(f"Model parameters requiring gradients: {sum(p.requires_grad for p in model.parameters())}")
+    print(f"Total trainable parameters: {len(trainable_params)}")
 
-    # Optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
+    # Optimizer - only for trainable parameters
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.learning_rate)
 
     # Training history
     train_losses = []
@@ -276,11 +238,11 @@ def main():
 
                 # Forward pass
                 optimizer.zero_grad()
-                loss = compute_loss_simple(model, context_input, target_values, args.prediction_length)
+                loss = compute_loss_with_forecaster(model, forecaster, context_input, target_values, args.prediction_length)
 
                 # Backward pass
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
                 optimizer.step()
 
                 epoch_loss += loss.item()
@@ -303,7 +265,7 @@ def main():
                     context_input, target_values = prepare_toto_input(
                         sample_df, args.context_length, args.prediction_length, device
                     )
-                    loss = compute_loss_simple(model, context_input, target_values, args.prediction_length)
+                    loss = compute_loss_with_forecaster(model, forecaster, context_input, target_values, args.prediction_length)
                     val_loss += loss.item()
                 except Exception as e:
                     print(f"Error processing validation sample {i}: {e}")

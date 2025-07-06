@@ -24,9 +24,9 @@ sys.path.insert(0, toto_path)
 os.environ["PYTHONPATH"] = f"{project_root}:{toto_path}:{os.environ.get('PYTHONPATH', '')}"
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
-from data.util.dataset import MaskedTimeseries
-from model.toto import Toto
-from inference.forecaster import TotoForecaster
+from toto.data.util.dataset import MaskedTimeseries
+from toto.model.toto import Toto
+from toto.inference.forecaster import TotoForecaster
 
 
 class VeniceDataset(Dataset):
