@@ -13,13 +13,8 @@ from gluonts.torch.distributions import AffineTransformed
 from jaxtyping import Bool, Float, Int
 from torch.distributions import Distribution
 
-from data.util.dataset import (
-    MaskedTimeseries,
-    pad_array,
-    pad_id_mask,
-    replace_extreme_values,
-)
-from model.backbone import TotoBackbone
+from toto.data.util.dataset import *
+from toto.model.backbone import TotoBackbone
 
 
 @dataclass(frozen=True)
