@@ -144,14 +144,20 @@ class TotoTrainingPipeline:
         
         # Setup device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if self.device.type == 'cpu':
-            logger.warning("CUDA not available. Training will be slow!")
         
         # Create model directory
         self.model_dir = self._create_model_directory()
         
         # Setup logging
         self._setup_logging()
+        
+        # Log device info after logging is configured
+        if self.device.type == 'cuda':
+            gpu_name = torch.cuda.get_device_name(self.device)
+            gpu_memory = torch.cuda.get_device_properties(self.device).total_memory / 1024**3
+            logger.info(f"Using GPU: {gpu_name} ({gpu_memory:.1f} GB)")
+        else:
+            logger.info("Using CPU - training will be slow!")
         
         # Initialize tracking variables
         self.start_epoch = 0
