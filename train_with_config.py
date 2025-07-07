@@ -108,13 +108,16 @@ class TotoTrainingPipeline:
         lr_factor: float = 0.1,
         lr_patience: int = 10,
         epochs: int = 100,
+        loss_fn: str = 'mse',
         eval_every: int = 5,
         save_every: int = 10,
         patience: int = 20,
         trainable_layers: list = None,
         time_interval_seconds: int = 3600,
         start_date: str = None,
-        num_samples: int = None
+        train_samples: int = None,
+        val_samples: str = '10%',
+        test_samples: str = '10%'
     ):
         self.data_path = data_path
         self.target_column = target_column
@@ -128,13 +131,16 @@ class TotoTrainingPipeline:
         self.lr_factor = lr_factor
         self.lr_patience = lr_patience
         self.epochs = epochs
+        self.loss_fn = loss_fn
         self.eval_every = eval_every
         self.save_every = save_every
         self.patience = patience
         self.trainable_layers = trainable_layers or [10, 11]
         self.time_interval_seconds = time_interval_seconds
         self.start_date = start_date
-        self.num_samples = num_samples
+        self.train_samples = train_samples
+        self.val_samples = val_samples
+        self.test_samples = test_samples
         
         # Setup device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -153,6 +159,16 @@ class TotoTrainingPipeline:
         self.patience_counter = 0
         self.train_losses = []
         self.val_losses = []
+    
+    def _parse_sample_count(self, sample_spec: str, train_samples: int) -> int:
+        """Parse sample count from string (absolute or percentage)."""
+        if sample_spec.endswith('%'):
+            # Percentage of train samples
+            percentage = float(sample_spec[:-1]) / 100
+            return int(train_samples * percentage)
+        else:
+            # Absolute number
+            return int(sample_spec)
     
     def _create_model_directory(self) -> Path:
         """Create organized model directory structure."""
@@ -193,10 +209,13 @@ class TotoTrainingPipeline:
             'lr_factor': self.lr_factor,
             'lr_patience': self.lr_patience,
             'epochs': self.epochs,
+            'loss_fn': self.loss_fn,
             'trainable_layers': self.trainable_layers,
             'time_interval_seconds': self.time_interval_seconds,
             'start_date': self.start_date,
-            'num_samples': self.num_samples
+            'train_samples': self.train_samples,
+            'val_samples': self.val_samples,
+            'test_samples': self.test_samples
         }
         
         with open(self.model_dir / "config.json", 'w') as f:
@@ -289,26 +308,46 @@ class TotoTrainingPipeline:
             df = df[df['timestamp_seconds'] >= start_seconds].reset_index(drop=True)
             logger.info(f"Filtered data from {self.start_date}, remaining points: {len(df)}")
         
-        # Limit number of samples if specified
-        if self.num_samples and len(df) > self.num_samples:
-            df = df.iloc[:self.num_samples]
-            logger.info(f"Limited data to {self.num_samples} points")
-        
         # Log data info
         if 'Data' in df.columns:
             logger.info(f"Data range: {df['Data'].min()} to {df['Data'].max()}")
-        logger.info(f"Total data points: {len(df)}")
+        logger.info(f"Total data points available: {len(df)}")
         
-        # Split data
+        # CORRECTED LOGIC: samples = data points, not windows
         n = len(df)
-        train_end = int(n * 0.8)
-        val_end = int(n * 0.9)
+        
+        # Step 1: Determine exact number of data points needed for each split
+        if self.train_samples:
+            train_data_points = self.train_samples
+        else:
+            # Use 80% of available data for train if not specified
+            train_data_points = int(n * 0.8)
+        
+        # Step 2: Calculate val/test data points
+        val_data_points = self._parse_sample_count(self.val_samples, train_data_points)
+        test_data_points = self._parse_sample_count(self.test_samples, train_data_points)
+        
+        # Step 3: Total data points needed
+        total_data_points_needed = train_data_points + val_data_points + test_data_points
+        
+        logger.info(f"Data points needed - Train: {train_data_points}, Val: {val_data_points}, Test: {test_data_points}")
+        logger.info(f"Total data points needed: {total_data_points_needed}, Available: {n}")
+        
+        # Step 4: Check if we have enough data
+        if total_data_points_needed > n:
+            logger.error(f"Not enough data! Need {total_data_points_needed} but have {n}. Please reduce sample counts.")
+            raise ValueError(f"Insufficient data: need {total_data_points_needed} points but only have {n}")
+        
+        # Step 5: Create sequential splits
+        train_end = train_data_points
+        val_end = train_end + val_data_points
+        test_end = val_end + test_data_points
         
         train_df = df.iloc[:train_end]
         val_df = df.iloc[train_end:val_end]
-        test_df = df.iloc[val_end:]
+        test_df = df.iloc[val_end:test_end]
         
-        logger.info(f"Data splits - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+        logger.info(f"Actual data splits - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
         
         # Create datasets
         stride = self.prediction_length // 2  # 50% overlap
@@ -412,7 +451,19 @@ class TotoTrainingPipeline:
             
             # Compute loss
             predictions = forecast.mean
-            loss = nn.functional.mse_loss(predictions, target_values)
+            
+            # Choose loss function
+            if self.loss_fn == 'mse':
+                loss = nn.functional.mse_loss(predictions, target_values)
+            elif self.loss_fn == 'mae':
+                loss = nn.functional.l1_loss(predictions, target_values)
+            elif self.loss_fn == 'huber':
+                loss = nn.functional.huber_loss(predictions, target_values)
+            elif self.loss_fn == 'smooth_l1':
+                loss = nn.functional.smooth_l1_loss(predictions, target_values)
+            
+            # Always compute both metrics for monitoring
+            mse = nn.functional.mse_loss(predictions, target_values)
             mae = nn.functional.l1_loss(predictions, target_values)
             
             # Backward pass
@@ -421,7 +472,7 @@ class TotoTrainingPipeline:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             self.optimizer.step()
             
-            epoch_losses.append(loss.item())
+            epoch_losses.append(mse.item())
             epoch_maes.append(mae.item())
         
         return {
@@ -535,7 +586,7 @@ class TotoTrainingPipeline:
             train_metrics = self._train_epoch(train_loader)
             train_mse = train_metrics['mse']
             self.train_losses.append(train_mse)
-            logger.info(f"Train MSE: {train_mse:.4f}, MAE: {train_metrics['mae']:.4f}, RMSE: {np.sqrt(train_mse):.4f}")
+            logger.info(f"Train MSE: {train_mse:.4f}, MAE: {train_metrics['mae']:.4f}, RMSE: {np.sqrt(train_mse):.4f} (optimizing {self.loss_fn})")
             
             # Evaluate
             if (epoch + 1) % self.eval_every == 0:
@@ -607,10 +658,13 @@ def main():
     parser.add_argument('--lr-factor', type=float, default=0.1, help='Factor to reduce LR by when plateau detected')
     parser.add_argument('--lr-patience', type=int, default=10, help='Number of epochs with no improvement before reducing LR')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs')
+    parser.add_argument('--loss-fn', type=str, default='mse', choices=['mse', 'mae', 'huber', 'smooth_l1'], help='Loss function to use')
     parser.add_argument('--trainable-layers', type=int, nargs='+', default=[10, 11], help='Layers to train')
     parser.add_argument('--time-interval', type=int, default=3600, help='Time interval in seconds')
     parser.add_argument('--start-date', type=str, help='Start date for training data (YYYY-MM-DD HH:MM:SS)')
-    parser.add_argument('--num-samples', type=int, help='Number of data points to use for training')
+    parser.add_argument('--train-samples', type=int, help='Number of data points to use for training')
+    parser.add_argument('--val-samples', type=str, default='10%', help='Validation samples (absolute number or percentage, default: 10%)')
+    parser.add_argument('--test-samples', type=str, default='10%', help='Test samples (absolute number or percentage, default: 10%)')
     
     args = parser.parse_args()
     
@@ -627,10 +681,13 @@ def main():
         lr_factor=args.lr_factor,
         lr_patience=args.lr_patience,
         epochs=args.epochs,
+        loss_fn=args.loss_fn,
         trainable_layers=args.trainable_layers,
         time_interval_seconds=args.time_interval,
         start_date=args.start_date,
-        num_samples=args.num_samples
+        train_samples=args.train_samples,
+        val_samples=args.val_samples,
+        test_samples=args.test_samples
     )
     
     # Run training
