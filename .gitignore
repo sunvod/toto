@@ -58,3 +58,4 @@ env/
 # Cache
 **/.mypy_cache
 **/.pytest_cache
+toto_venezia_simple_finetuned.pt
