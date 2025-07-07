@@ -95,19 +95,20 @@ def create_training_samples(df, context_length, prediction_length, stride=96):
     return samples
 
 
-def compute_loss_with_forecaster(model, forecaster, context_input, target_values, prediction_length):
+def compute_loss_with_trainer(model, trainer, context_input, target_values, prediction_length):
     """
-    Compute loss using the TotoForecaster (like simple_finetune.py).
+    Compute loss using the TotoTrainer (modified forecaster with gradients).
     """
     # Set model to train mode
     model.train()
     
     try:
-        # Use forecaster to generate predictions
-        forecast = forecaster.forecast(
+        # Use trainer to generate predictions with gradients
+        # Use num_samples=None to force using generate_mean instead of generate_samples
+        forecast = trainer.forecast(
             context_input,
             prediction_length=prediction_length,
-            num_samples=1,  # Single sample for training efficiency
+            num_samples=None,  # None forces using generate_mean path
             samples_per_batch=1,
             use_kv_cache=False  # Disable KV cache for training
         )
@@ -121,7 +122,7 @@ def compute_loss_with_forecaster(model, forecaster, context_input, target_values
         return mse_loss
         
     except Exception as e:
-        print(f"Forecaster error: {e}")
+        print(f"Trainer error: {e}")
         # Return a small loss to continue training
         return torch.tensor(0.1, requires_grad=True, device=target_values.device)
 
@@ -193,9 +194,9 @@ def main():
     model = Toto.from_pretrained('Datadog/Toto-Open-Base-1.0')
     model.to(device)
     
-    # Create forecaster
-    from toto.inference.forecaster import TotoForecaster
-    forecaster = TotoForecaster(model.model)
+    # Create trainer (modified forecaster with gradients enabled)
+    from toto.training.train import TotoTrainer
+    trainer = TotoTrainer(model.model)
 
     # Prepare for fine-tuning - only train last few layers (like simple_finetune.py)
     trainable_params = []
@@ -238,7 +239,7 @@ def main():
 
                 # Forward pass
                 optimizer.zero_grad()
-                loss = compute_loss_with_forecaster(model, forecaster, context_input, target_values, args.prediction_length)
+                loss = compute_loss_with_trainer(model, trainer, context_input, target_values, args.prediction_length)
 
                 # Backward pass
                 loss.backward()
@@ -265,7 +266,7 @@ def main():
                     context_input, target_values = prepare_toto_input(
                         sample_df, args.context_length, args.prediction_length, device
                     )
-                    loss = compute_loss_with_forecaster(model, forecaster, context_input, target_values, args.prediction_length)
+                    loss = compute_loss_with_trainer(model, trainer, context_input, target_values, args.prediction_length)
                     val_loss += loss.item()
                 except Exception as e:
                     print(f"Error processing validation sample {i}: {e}")
