@@ -600,7 +600,7 @@ class TotoTrainingPipeline:
                 val_loss = val_metrics['loss']
                 self.val_losses.append(val_loss)
                 
-                logger.info(f"Val Loss: {val_loss:.4f}, MAE: {val_metrics['mae']:.4f}, RMSE: {val_metrics['rmse']:.4f}")
+                logger.info(f"Val MSE: {val_loss:.4f}, MAE: {val_metrics['mae']:.4f}, RMSE: {val_metrics['rmse']:.4f}")
                 
                 # Update scheduler with validation loss
                 old_lr = self.optimizer.param_groups[0]['lr']
