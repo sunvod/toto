@@ -14,8 +14,8 @@
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/train_with_config.py" />
-    <option name="PARAMETERS" value="data/venezia.csv --model-name &quot;venezia&quot; --target-column &quot;Livello Punta Salute (cm)&quot; --context-length 1024 --prediction-length 96 --epochs 10 --batch-size 32 --start-date &quot;1983-01-01 00:00:00&quot; --train-samples 70000 --val-samples 17520 --test-samples 17520 --learning-rate 5e-5 --min-lr 1e-7" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/training.py" />
+    <option name="PARAMETERS" value="data/venezia.csv --model-name &quot;venezia&quot; --target-column &quot;Livello Punta Salute (cm)&quot; --context-length 96 --prediction-length 96 --epochs 10 --batch-size 32 --start-date &quot;1983-01-01 00:00:00&quot; --train-samples 70000 --val-samples 17520 --test-samples 17520 --learning-rate 5e-4 --min-lr 1e-7" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

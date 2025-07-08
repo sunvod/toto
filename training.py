@@ -18,8 +18,9 @@ import json
 import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List, Union
 import logging
+import re
 
 import numpy as np
 import pandas as pd
@@ -51,10 +52,12 @@ class TimeSeriesDataset(Dataset):
         prediction_length: int,
         stride: int,
         time_interval_seconds: int = 3600,
-        mode: str = "train"
+        mode: str = "train",
+        feature_columns: Optional[List[str]] = None
     ):
         self.df = df
         self.target_column = target_column
+        self.feature_columns = feature_columns
         self.context_length = context_length
         self.prediction_length = prediction_length
         self.stride = stride
@@ -62,12 +65,21 @@ class TimeSeriesDataset(Dataset):
         self.mode = mode
         self.total_length = context_length + prediction_length
         
+        # Determine all columns to use (target + features)
+        if self.feature_columns is None:
+            self.all_columns = [self.target_column]
+        else:
+            # Ensure target is first, then features
+            self.all_columns = [self.target_column] + [col for col in self.feature_columns if col != self.target_column]
+        
+        self.n_variates = len(self.all_columns)
+        
         # Calculate valid starting positions
         self.valid_starts = []
         for i in range(0, len(df) - self.total_length + 1, stride):
             self.valid_starts.append(i)
         
-        logger.info(f"Created {self.mode} dataset with {len(self.valid_starts)} samples")
+        logger.info(f"Created {self.mode} dataset with {len(self.valid_starts)} samples, {self.n_variates} variates")
     
     def __len__(self):
         return len(self.valid_starts)
@@ -83,12 +95,27 @@ class TimeSeriesDataset(Dataset):
         context = window.iloc[:self.context_length]
         target = window.iloc[self.context_length:]
         
-        return {
-            'context_values': context[self.target_column].values.astype(np.float32),
-            'context_timestamps': context['timestamp_seconds'].values.astype(np.int64),
-            'target_values': target[self.target_column].values.astype(np.float32),
-            'time_interval': self.time_interval_seconds
-        }
+        if self.n_variates == 1:
+            # Univariate case - maintain backward compatibility
+            return {
+                'context_values': context[self.target_column].values.astype(np.float32),
+                'context_timestamps': context['timestamp_seconds'].values.astype(np.int64),
+                'target_values': target[self.target_column].values.astype(np.float32),
+                'time_interval': self.time_interval_seconds,
+                'n_variates': 1
+            }
+        else:
+            # Multivariate case - shape (variates, time_steps)
+            context_values = context[self.all_columns].values.T.astype(np.float32)
+            target_values = target[self.target_column].values.astype(np.float32)  # Only target for loss
+            
+            return {
+                'context_values': context_values,
+                'context_timestamps': context['timestamp_seconds'].values.astype(np.int64),
+                'target_values': target_values,
+                'time_interval': self.time_interval_seconds,
+                'n_variates': self.n_variates
+            }
 
 
 class TotoTrainingPipeline:
@@ -117,7 +144,8 @@ class TotoTrainingPipeline:
         start_date: str = None,
         train_samples: int = None,
         val_samples: str = '10%',
-        test_samples: str = '10%'
+        test_samples: str = '10%',
+        feature_columns: Optional[Union[List[str], int, str]] = None
     ):
         self.data_path = data_path
         self.target_column = target_column
@@ -141,6 +169,7 @@ class TotoTrainingPipeline:
         self.train_samples = train_samples
         self.val_samples = val_samples
         self.test_samples = test_samples
+        self.feature_columns = feature_columns
         
         # Setup device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -165,6 +194,106 @@ class TotoTrainingPipeline:
         self.patience_counter = 0
         self.train_losses = []
         self.val_losses = []
+    
+    def _parse_column_spec(self, spec: Union[str, int], df: pd.DataFrame, exclude_columns: Optional[List[str]] = None) -> Union[str, List[str]]:
+        """Parse column specification (name, index, range, or pattern).
+        
+        Args:
+            spec: Column specification (string name, index, range like '1:5', or pattern like '*sales*')
+            df: DataFrame to get columns from
+            exclude_columns: Columns to exclude from selection
+        
+        Returns:
+            Column name(s) matching the specification
+        """
+        available_columns = [col for col in df.columns if col not in (exclude_columns or [])]
+        
+        if isinstance(spec, int):
+            # Numeric index
+            if spec < 0:
+                # Negative indexing
+                return available_columns[spec]
+            else:
+                return available_columns[spec]
+        
+        elif isinstance(spec, str):
+            # Check if it's a range like "1:5"
+            if ':' in spec:
+                start, end = map(int, spec.split(':'))
+                return available_columns[start:end]
+            
+            # Check if it's a pattern with wildcards
+            elif '*' in spec:
+                pattern = spec.replace('*', '.*')
+                regex = re.compile(pattern, re.IGNORECASE)
+                matches = [col for col in available_columns if regex.search(col)]
+                if matches:
+                    return matches[0]  # Return first match
+                else:
+                    raise ValueError(f"No column matches pattern '{spec}'")
+            
+            # Check if it's a number as string
+            elif spec.isdigit() or (spec.startswith('-') and spec[1:].isdigit()):
+                return self._parse_column_spec(int(spec), df, exclude_columns)
+            
+            # Otherwise treat as column name
+            else:
+                if spec in df.columns:
+                    return spec
+                else:
+                    raise ValueError(f"Column '{spec}' not found in dataset")
+        
+        else:
+            raise ValueError(f"Invalid column specification: {spec}")
+    
+    def _parse_feature_columns(self, spec: Union[List[str], int, str], df: pd.DataFrame, target_column: str) -> Optional[List[str]]:
+        """Parse feature columns specification.
+        
+        Args:
+            spec: Feature columns specification
+            df: DataFrame to get columns from
+            target_column: Target column to exclude from features
+        
+        Returns:
+            List of feature column names or None
+        """
+        if spec is None:
+            return None
+        
+        exclude = ['timestamp_seconds', target_column]
+        available_columns = [col for col in df.columns if col not in exclude]
+        
+        if isinstance(spec, int):
+            # Take first N columns (excluding target and timestamp)
+            if spec == -1:
+                # All available columns
+                return available_columns
+            else:
+                return available_columns[:spec]
+        
+        elif isinstance(spec, str):
+            # Parse as single column spec
+            result = self._parse_column_spec(spec, df, exclude)
+            if isinstance(result, list):
+                return result
+            else:
+                return [result]
+        
+        elif isinstance(spec, list):
+            # List of column specs
+            feature_columns = []
+            for item in spec:
+                result = self._parse_column_spec(item, df, exclude)
+                if isinstance(result, list):
+                    feature_columns.extend(result)
+                else:
+                    feature_columns.append(result)
+            # Remove duplicates while preserving order
+            seen = set()
+            return [x for x in feature_columns if not (x in seen or seen.add(x))]
+        
+        else:
+            raise ValueError(f"Invalid feature columns specification: {spec}")
     
     def _parse_sample_count(self, sample_spec: str, train_samples: int) -> int:
         """Parse sample count from string (absolute or percentage)."""
@@ -221,7 +350,9 @@ class TotoTrainingPipeline:
             'start_date': self.start_date,
             'train_samples': self.train_samples,
             'val_samples': self.val_samples,
-            'test_samples': self.test_samples
+            'test_samples': self.test_samples,
+            'feature_columns': self.feature_columns,
+            'n_variates': self.n_variates if hasattr(self, 'n_variates') else 1
         }
         
         with open(self.model_dir / "config.json", 'w') as f:
@@ -292,6 +423,39 @@ class TotoTrainingPipeline:
         # Load CSV
         df = pd.read_csv(self.data_path)
         
+        # Parse target column
+        if isinstance(self.target_column, (int, str)):
+            try:
+                # First check if it's a direct column name
+                if isinstance(self.target_column, str) and self.target_column in df.columns:
+                    parsed_target = self.target_column
+                else:
+                    # Try parsing as index/pattern
+                    parsed_target = self._parse_column_spec(self.target_column, df)
+                    if isinstance(parsed_target, list):
+                        parsed_target = parsed_target[0]  # Take first if multiple matches
+                self.target_column = parsed_target
+                logger.info(f"Target column: {self.target_column}")
+            except Exception as e:
+                logger.error(f"Error parsing target column: {e}")
+                raise
+        
+        # Store the number of variates for configuration
+        self.n_variates = 1  # Default, will be updated after parsing features
+        
+        # Parse feature columns
+        if self.feature_columns is not None:
+            try:
+                parsed_features = self._parse_feature_columns(self.feature_columns, df, self.target_column)
+                self.feature_columns = parsed_features
+                if parsed_features:
+                    self.n_variates = len(parsed_features) + 1  # +1 for target
+                    logger.info(f"Feature columns ({len(parsed_features)}): {', '.join(parsed_features[:5])}{'...' if len(parsed_features) > 5 else ''}")
+                    logger.info(f"Total variates: {self.n_variates} (target + {len(parsed_features)} features)")
+            except Exception as e:
+                logger.error(f"Error parsing feature columns: {e}")
+                raise
+        
         # Handle timestamps
         if 'timestamp_seconds' not in df.columns:
             if 'Data' in df.columns:
@@ -360,15 +524,18 @@ class TotoTrainingPipeline:
         
         train_dataset = TimeSeriesDataset(
             train_df, self.target_column, self.context_length, 
-            self.prediction_length, stride, self.time_interval_seconds, mode="train"
+            self.prediction_length, stride, self.time_interval_seconds, 
+            mode="train", feature_columns=self.feature_columns
         )
         val_dataset = TimeSeriesDataset(
             val_df, self.target_column, self.context_length,
-            self.prediction_length, self.prediction_length, self.time_interval_seconds, mode="validation"
+            self.prediction_length, self.prediction_length, self.time_interval_seconds, 
+            mode="validation", feature_columns=self.feature_columns
         )
         test_dataset = TimeSeriesDataset(
             test_df, self.target_column, self.context_length,
-            self.prediction_length, self.prediction_length, self.time_interval_seconds, mode="test"
+            self.prediction_length, self.prediction_length, self.time_interval_seconds, 
+            mode="test", feature_columns=self.feature_columns
         )
         
         # Create dataloaders
@@ -427,16 +594,34 @@ class TotoTrainingPipeline:
         
         for batch in tqdm(train_loader, desc="Training"):
             # Prepare batch
-            context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
-            context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
-            target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
-            time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+            n_variates = batch['n_variates'][0]  # All items in batch have same n_variates
             
-            # Add variate dimension
-            batch_size = context_values.shape[0]
-            context_values = context_values.unsqueeze(1)
-            context_timestamps = context_timestamps.unsqueeze(1)
-            target_values = target_values.unsqueeze(1)
+            if n_variates == 1:
+                # Univariate case - maintain backward compatibility
+                context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
+                context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
+                target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
+                time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+                
+                # Add variate dimension
+                batch_size = context_values.shape[0]
+                context_values = context_values.unsqueeze(1)
+                context_timestamps = context_timestamps.unsqueeze(1)
+                target_values = target_values.unsqueeze(1)
+            else:
+                # Multivariate case
+                context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
+                target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
+                time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+                
+                batch_size = context_values.shape[0]
+                # context_values already has shape (batch, variates, time)
+                # target_values has shape (batch, time) - add variate dimension
+                target_values = target_values.unsqueeze(1)
+                
+                # Expand timestamps for all variates
+                context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
+                context_timestamps = context_timestamps.unsqueeze(1).expand(-1, n_variates, -1)
             
             # Create MaskedTimeseries
             masked_ts = MaskedTimeseries(
@@ -444,7 +629,7 @@ class TotoTrainingPipeline:
                 padding_mask=torch.ones_like(context_values, dtype=torch.bool),
                 id_mask=torch.zeros_like(context_values, dtype=torch.int),
                 timestamp_seconds=context_timestamps,
-                time_interval_seconds=time_intervals.unsqueeze(1)
+                time_interval_seconds=time_intervals.unsqueeze(1).expand(-1, n_variates) if n_variates > 1 else time_intervals.unsqueeze(1)
             )
             
             # Forward pass
@@ -456,7 +641,11 @@ class TotoTrainingPipeline:
             )
             
             # Compute loss
-            predictions = forecast.mean
+            if n_variates == 1:
+                predictions = forecast.mean
+            else:
+                # For multivariate, extract only the target variable predictions (first variate)
+                predictions = forecast.mean[:, 0:1, :]  # Keep dimension for consistency
             
             # Choose loss function
             if self.loss_fn == 'mse':
@@ -495,15 +684,29 @@ class TotoTrainingPipeline:
         
         for batch in tqdm(dataloader, desc="Evaluating"):
             # Prepare batch
-            context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
-            context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
-            target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
-            time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+            n_variates = batch['n_variates'][0]
             
-            # Add variate dimension
-            context_values = context_values.unsqueeze(1)
-            context_timestamps = context_timestamps.unsqueeze(1)
-            target_values = target_values.unsqueeze(1)
+            if n_variates == 1:
+                # Univariate case
+                context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
+                context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
+                target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
+                time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+                
+                # Add variate dimension
+                context_values = context_values.unsqueeze(1)
+                context_timestamps = context_timestamps.unsqueeze(1)
+                target_values = target_values.unsqueeze(1)
+            else:
+                # Multivariate case
+                context_values = torch.from_numpy(np.stack(batch['context_values'])).to(self.device)
+                target_values = torch.from_numpy(np.stack(batch['target_values'])).to(self.device)
+                time_intervals = torch.as_tensor(batch['time_interval']).to(self.device)
+                
+                # Handle shapes
+                target_values = target_values.unsqueeze(1)
+                context_timestamps = torch.from_numpy(np.stack(batch['context_timestamps'])).to(self.device)
+                context_timestamps = context_timestamps.unsqueeze(1).expand(-1, n_variates, -1)
             
             # Create MaskedTimeseries
             masked_ts = MaskedTimeseries(
@@ -511,7 +714,7 @@ class TotoTrainingPipeline:
                 padding_mask=torch.ones_like(context_values, dtype=torch.bool),
                 id_mask=torch.zeros_like(context_values, dtype=torch.int),
                 timestamp_seconds=context_timestamps,
-                time_interval_seconds=time_intervals.unsqueeze(1)
+                time_interval_seconds=time_intervals.unsqueeze(1).expand(-1, n_variates) if n_variates > 1 else time_intervals.unsqueeze(1)
             )
             
             # Forward pass
@@ -523,7 +726,12 @@ class TotoTrainingPipeline:
             )
             
             # Compute metrics
-            predictions = forecast.mean
+            if n_variates == 1:
+                predictions = forecast.mean
+            else:
+                # For multivariate, use only target variable predictions
+                predictions = forecast.mean[:, 0:1, :]
+            
             loss = nn.functional.mse_loss(predictions, target_values)
             mae = nn.functional.l1_loss(predictions, target_values)
             
@@ -654,7 +862,7 @@ class TotoTrainingPipeline:
 def main():
     parser = argparse.ArgumentParser(description='Train Toto model with configuration')
     parser.add_argument('data_path', type=str, help='Path to CSV data file')
-    parser.add_argument('--target-column', type=str, required=True, help='Name of target column')
+    parser.add_argument('--target-column', type=str, required=True, help='Target column name or index (e.g., "sales", 0, -1 for last column)')
     parser.add_argument('--context-length', type=int, default=2048, help='Context window length')
     parser.add_argument('--prediction-length', type=int, default=96, help='Prediction horizon length')
     parser.add_argument('--model-name', type=str, default='toto_base', help='Model name for directory')
@@ -671,8 +879,25 @@ def main():
     parser.add_argument('--train-samples', type=int, help='Number of data points to use for training')
     parser.add_argument('--val-samples', type=str, default='10%', help='Validation samples (absolute number or percentage, default: 10%)')
     parser.add_argument('--test-samples', type=str, default='10%', help='Test samples (absolute number or percentage, default: 10%)')
+    parser.add_argument('--feature-columns', nargs='*', help='Feature columns to use (names, indices, ranges, or count). Examples: "col1" "col2", 3, "0:5", -1 for all')
     
     args = parser.parse_args()
+    
+    # Parse feature columns if provided
+    feature_columns = None
+    if args.feature_columns:
+        if len(args.feature_columns) == 1:
+            # Single argument - could be a number, range, or single column name
+            arg = args.feature_columns[0]
+            try:
+                # Try to parse as integer
+                feature_columns = int(arg)
+            except ValueError:
+                # Not an integer, keep as string
+                feature_columns = arg
+        else:
+            # Multiple arguments - list of column names
+            feature_columns = args.feature_columns
     
     # Create pipeline
     pipeline = TotoTrainingPipeline(
@@ -693,7 +918,8 @@ def main():
         start_date=args.start_date,
         train_samples=args.train_samples,
         val_samples=args.val_samples,
-        test_samples=args.test_samples
+        test_samples=args.test_samples,
+        feature_columns=feature_columns
     )
     
     # Run training
